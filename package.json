@@ -1,0 +1,27 @@
+{
+  "name": "@zcode/boot-refraction-zcode",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Refraction boot film for ZCode, delivered as a standalone WebView2 launcher (full project source; both hosts share one field).",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2"
+  },
+  "scripts": {
+    "preview": "node tools/serve.mjs",
+    "build": "node tools/build-inject-preview.mjs",
+    "splash": "node tools/build-splash.mjs && powershell -NoProfile -ExecutionPolicy Bypass -File splash/build.ps1",
+    "splash:install": "powershell -NoProfile -ExecutionPolicy Bypass -File splash/install.ps1",
+    "deploy": "node tools/install.mjs",
+    "package": "node tools/package.mjs"
+  },
+  "license": "MIT"
+}

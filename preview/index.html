@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZCode — Refraction / preview</title>
+<link rel="stylesheet" href="../lib/boot.css?v=24">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0a0b0d; }
+  body {
+    font-family: "Inter", "Segoe UI Variable Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #e9e8e4;
+    overflow: hidden;
+  }
+
+  /* A stand-in for the shell the layer hands off to. */
+  .app { position: fixed; inset: 0; display: flex; background: #0a0b0d; }
+  .rail {
+    width: 236px; flex: none; border-right: 1px solid rgba(255,255,255,.07);
+    padding: 22px 18px; display: flex; flex-direction: column; gap: 22px;
+  }
+  .rail-brand { display: flex; align-items: center; gap: 10px; font-size: 13px; letter-spacing: .18em; color: #f4f2ec; }
+  .rail-brand svg { width: 15px; height: 15px; fill: #f4f2ec; }
+  .rail-nav { display: flex; flex-direction: column; gap: 4px; }
+  .rail-nav span {
+    font-size: 12px; color: rgba(244,242,236,.5); padding: 7px 9px; border-radius: 8px;
+  }
+  .rail-nav span:first-child { background: rgba(255,255,255,.06); color: #f4f2ec; }
+  .rail-foot { margin-top: auto; font-size: 10px; color: rgba(244,242,236,.3); letter-spacing: .08em; }
+
+  .main { flex: 1; display: flex; flex-direction: column; padding: 26px 40px; }
+  .main-top { display: flex; justify-content: space-between; font-size: 11px; color: rgba(244,242,236,.4); letter-spacing: .1em; }
+  .main-body { flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 760px; margin: 0 auto; width: 100%; }
+  .main-body h1 { font-size: 40px; font-weight: 400; letter-spacing: -.02em; margin: 0 0 10px; color: #f4f2ec; }
+  .main-body p { margin: 0 0 34px; color: rgba(244,242,236,.45); font-size: 14px; }
+  .composer {
+    height: 108px; border-radius: 18px; border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.035); padding: 16px 18px; display: flex; flex-direction: column;
+  }
+  .composer textarea {
+    flex: 1; resize: none; border: 0; outline: 0; background: transparent;
+    color: rgba(244,242,236,.72); font: inherit; font-size: 13px; padding: 0;
+  }
+  .composer textarea::placeholder { color: rgba(244,242,236,.32); }
+  .composer .row { margin-top: auto; display: flex; align-items: center; gap: 8px; }
+  .composer .row i { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); }
+  .composer .row .send {
+    margin-left: auto; font: inherit; font-size: 12px; font-weight: 500; color: #0a0b0d; background: #e9e8e4;
+    padding: 6px 14px; border-radius: 999px; border: 0; cursor: default;
+  }
+
+  /* Preview-only controls. */
+  .tools {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 6px; border-radius: 999px;
+    background: rgba(20,20,24,.72); border: 1px solid rgba(255,255,255,.14);
+    backdrop-filter: blur(14px); z-index: 2147483600;
+    font-size: 11px; color: rgba(255,255,255,.7);
+    opacity: 0; pointer-events: none; transition: opacity 260ms ease;
+  }
+  .tools.show { opacity: 1; pointer-events: auto; }
+  .tools button, .tools a {
+    appearance: none; border: 0; background: transparent; color: inherit; font: inherit;
+    padding: 6px 11px; border-radius: 999px; cursor: pointer; text-decoration: none;
+  }
+  .tools button:hover, .tools a:hover { background: rgba(255,255,255,.1); }
+  .tools .on { background: rgba(255,255,255,.16); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="app" aria-hidden="true">
+  <aside class="rail">
+    <div class="rail-brand">
+      <svg viewBox="0 0 1000 1000"><path d="M262 288 H515 L476 352 H262 Z"></path><path d="M515 288 H765 L497 732 H245 Z"></path><path d="M534 668 H745 V732 H497 Z"></path></svg>
+      ZCODE
+    </div>
+    <nav class="rail-nav">
+      <span>新会话</span><span>工作区</span><span>技能</span><span>设置</span>
+    </nav>
+    <div class="rail-foot">LOCAL · 128K</div>
+  </aside>
+  <main class="main">
+    <div class="main-top"><span>WORKSPACE / DEFAULT</span><span>READY</span></div>
+    <div class="main-body">
+      <h1>今天想构建什么？</h1>
+      <p>描述一个目标，ZCode 会拆解、实现并验证它。</p>
+      <div class="composer">
+        <textarea rows="2" placeholder="输入一句话开始…" aria-label="prompt"></textarea>
+        <div class="row"><i></i><i></i><button type="button" class="send">发送</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="zcb-stage"></div>
+
+<div class="tools show">
+  <button id="replay" class="on">重播</button>
+  <a href="?zcb=still">定格</a>
+  <a href="?zcb=freeze:1500">切场</a>
+  <a href="?zcb=freeze:3200">主画面</a>
+  <a href="?zcb=slow">慢放</a>
+</div>
+
+<script type="module">
+  import { SCENE_HTML } from '../lib/scene.js?v=24'
+  import '../lib/field.js?v=24'
+  import '../lib/overlay.js?v=24'
+
+  const stage = document.getElementById('zcb-stage')
+  const search = new URLSearchParams(location.search)
+  if (search.has('dark')) document.documentElement.setAttribute('data-ds-dark-theme', '')
+
+  function start() {
+    stage.innerHTML = SCENE_HTML
+    const root = document.getElementById('zcb-root')
+    window.__PREVIEW_HANDLE__ = window.ZCBoot.play({ root, playOncePerSession: false })
+  }
+
+  start()
+
+  document.getElementById('replay').addEventListener('click', () => {
+    window.__PREVIEW_HANDLE__?.destroy()
+    stage.innerHTML = ''
+    location.search = location.search || '?zcb=auto'
+  })
+
+  const tools = document.querySelector('.tools')
+  let hideTimer = setTimeout(() => tools.classList.remove('show'), 5200)
+  addEventListener('pointermove', () => {
+    tools.classList.add('show')
+    clearTimeout(hideTimer)
+    hideTimer = setTimeout(() => tools.classList.remove('show'), 2200)
+  })
+</script>
+</body>
+</html>

@@ -20,6 +20,8 @@ namespace ZCodeSplash
         [STAThread]
         private static void Main(string[] args)
         {
+            if (Has(args, "--log")) Log.Enable();
+
             string html = Value(args, "--html");
             if (html == null) html = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "splash.html");
 
@@ -28,6 +30,9 @@ namespace ZCodeSplash
 
             bool noLaunch = Has(args, "--no-launch");
             bool always = Has(args, "--always");
+            // Default: the page has already faded to paper, so the window can
+            // close straight away; --lift-ms opts into a curtain move instead.
+            int liftMs = Number(args, "--lift-ms", 0);
 
             // A running app already owns the screen: bring it forward instead of
             // replaying the film on top of a live window.
@@ -44,7 +49,7 @@ namespace ZCodeSplash
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new SplashForm(html, app, noLaunch));
+            Application.Run(new SplashForm(html, app, noLaunch, liftMs));
         }
 
         internal static IntPtr ExistingWindow()
@@ -96,6 +101,41 @@ namespace ZCodeSplash
             }
             return null;
         }
+
+        private static int Number(string[] args, string name, int fallback)
+        {
+            string raw = Value(args, name);
+            int parsed;
+            if (raw != null && int.TryParse(raw, out parsed) && parsed >= 0) return parsed;
+            return fallback;
+        }
+    }
+
+    internal static class Log
+    {
+        private static bool on;
+        private static string path;
+
+        internal static void Enable()
+        {
+            try
+            {
+                string dir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ZCodeSplash");
+                Directory.CreateDirectory(dir);
+                path = Path.Combine(dir, "splash.log");
+                File.WriteAllText(path, "");
+                on = true;
+            }
+            catch (Exception) { }
+        }
+
+        internal static void Write(string message)
+        {
+            if (!on) return;
+            try { File.AppendAllText(path, DateTime.Now.ToString("HH:mm:ss.fff") + "  " + message + "\r\n"); }
+            catch (Exception) { }
+        }
     }
 
     internal sealed class SplashForm : Form
@@ -105,18 +145,21 @@ namespace ZCodeSplash
         private readonly string htmlPath;
         private readonly string appPath;
         private readonly bool noLaunch;
+        private readonly int liftMs;
 
         private WebView2 webView;
         private System.Windows.Forms.Timer watchdog;
+        private System.Windows.Forms.Timer dismiss;
         private bool launched;
         private bool handedOff;
         private bool cursorHidden;
 
-        internal SplashForm(string html, string app, bool noLaunch)
+        internal SplashForm(string html, string app, bool noLaunch, int liftMs)
         {
             htmlPath = html;
             appPath = app;
             this.noLaunch = noLaunch;
+            this.liftMs = liftMs;
 
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
@@ -131,6 +174,7 @@ namespace ZCodeSplash
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            Log.Write("shown");
             Cursor.Hide();
             cursorHidden = true;
             Activate();
@@ -171,6 +215,7 @@ namespace ZCodeSplash
                 PaintBlack(core);
                 core.WebMessageReceived += OnMessage;
                 core.Navigate(new Uri(htmlPath).AbsoluteUri);
+                Log.Write("nav");
 
                 webView.Focus();
                 StartApp();
@@ -214,7 +259,7 @@ namespace ZCodeSplash
             string text;
             try { text = e.TryGetWebMessageAsString(); }
             catch (Exception) { return; }
-            if (text == "zcb:done") Handoff();
+            if (text == "zcb:done") { Log.Write("done message"); Handoff(); }
         }
 
         private void OnWatchdog(object sender, EventArgs e)
@@ -227,6 +272,7 @@ namespace ZCodeSplash
         {
             if (handedOff) return;
             handedOff = true;
+            Log.Write("handoff");
             if (watchdog != null) watchdog.Stop();
             ShowCursor();
 
@@ -247,8 +293,41 @@ namespace ZCodeSplash
                 }
                 Thread.Sleep(160);
             }
-            try { BeginInvoke(new Action(Close)); }
+            try { BeginInvoke(new Action(StartDismiss)); }
             catch (Exception) { }
+        }
+
+        /* Dissolve by motion: the page keeps the black slab and the traced shell
+           on screen, and the window travels up, so the app is progressively
+           uncovered instead of popping in. Window opacity is not an option —
+           WebView2 is a child HWND and disappears once the window is layered. */
+        private void StartDismiss()
+        {
+            if (dismiss != null) return;
+            if (liftMs <= 0) { Log.Write("lift skipped"); Close(); return; }
+
+            Log.Write("lift start " + liftMs + "ms");
+            Rectangle start = Bounds;
+            System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+
+            dismiss = new System.Windows.Forms.Timer();
+            dismiss.Interval = 8;
+            dismiss.Tick += delegate
+            {
+                double t = Math.Min(1, clock.Elapsed.TotalMilliseconds / liftMs);
+                double eased = 1 - Math.Pow(1 - t, 3);
+                int top = start.Top - (int)Math.Round(start.Height * eased);
+                SetBounds(start.Left, top, start.Width, start.Height);
+                if (t >= 1)
+                {
+                    Log.Write("lift end top=" + top);
+                    dismiss.Stop();
+                    dismiss.Dispose();
+                    dismiss = null;
+                    Close();
+                }
+            };
+            dismiss.Start();
         }
 
         private void ShowCursor()
@@ -267,6 +346,7 @@ namespace ZCodeSplash
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             ShowCursor();
+            Log.Write("closed");
             if (watchdog != null) watchdog.Dispose();
             base.OnFormClosed(e);
         }

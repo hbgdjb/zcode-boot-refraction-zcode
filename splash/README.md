@@ -6,7 +6,7 @@ ZCode 的启动动画，做成一个独立的启动层：无边框、全屏、�
 黑场 → Z 的三笔写入 → 沿 Z 的斜杠裂开 → 平行光线场 + 一道匀速光束 → 黑板块压下来 → 交棒
 ```
 
-屏幕上约 11 秒，任意键 / 点击 / ESC 立即跳过。
+屏幕上约 10.5 秒，任意键 / 点击 / ESC 立即跳过。黑板块压下来后整层淡出到纸白，再关闭窗口，接上同样接近纸白的工作台。
 
 ## 为什么不是 ZCode 插件
 
@@ -57,6 +57,8 @@ powershell -ExecutionPolicy Bypass -File uninstall.ps1
 | `--no-launch` | 只播，不启动 ZCode（调试用） |
 | `--html <path>` | 换一个页面 |
 | `--app <path>` | 指定 ZCode.exe |
+| `--lift-ms <n>` | 改成抬幕式收尾（整窗上移 n 毫秒），默认 0 |
+| `--log` | 时序写入 `%LOCALAPPDATA%\ZCodeSplash\splash.log` |
 
 ## 重新编译
 

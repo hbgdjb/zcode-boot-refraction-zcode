@@ -25,6 +25,9 @@ const mount = `;(function () {
   var host = document.getElementById('zcb-root')
   if (!host) return
   var template = host.outerHTML
+  // The template replaces the original node; leaving it in place would stack a
+  // second, never-animated layer on top of the film.
+  host.parentNode.removeChild(host)
   var loop = /(?:^|[?&])loop(?:[=&]|$)/.test(location.search)
 
   function mount() {
@@ -32,7 +35,7 @@ const mount = `;(function () {
     wrap.innerHTML = template
     var root = wrap.firstElementChild
     document.body.insertBefore(root, document.body.firstChild)
-    var handle = window.ZCBoot.play({ root: root, playOncePerSession: false, mode: 'splash' })
+    var handle = window.ZCBoot.play({ root: root, playOncePerSession: false, mode: 'splash', dark: true })
     window.__ZCB_HANDLE__ = handle
     if (!handle) post('zcb:done')
   }
@@ -58,9 +61,11 @@ const html = `<!doctype html>
 <title>ZCode</title>
 <style>${css}</style>
 <style>
-  html, body { margin: 0; height: 100%; background: #050506; overflow: hidden; }
+  /* Paper, not black: the last act fades the film to this colour, so the cut
+     to the app lands on the same near-white the shell uses. */
+  html, body { margin: 0; height: 100%; background: #fbfaf7; overflow: hidden; }
   body { cursor: none; }
-  .zcb__sketch, .zcb__skip { display: none !important; }
+  .zcb__skip { display: none !important; }
 </style>
 </head>
 <body>

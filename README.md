@@ -77,7 +77,7 @@ powershell -ExecutionPolicy Bypass -File src\build.ps1 -WebViewDir "C:\path\to\W
 | | |
 |---|---|
 | 本仓库 | ZCode 启动器（`ZCodeSplash.exe` + WebView2 全屏置顶窗口） |
-| 姊妹仓库 | [dsh 版](https://github.com/hbgdjb/zcode-boot-refraction-dsh) — 以 DSH Cordis 插件形式注入首屏 |
+| DSH 插件版 | 同一套光场的另一种形态（Cordis 插件注入首屏），源码在 `lib/` 与 `dsh/`，本次未单独建仓库 |
 | 安装包 | [Releases](https://github.com/hbgdjb/zcode-boot-refraction-zcode/releases) 里的 `zcode-boot-refraction-zcode-1.0.0.zip` |
 
 两份 zip 各自独立可交付：解压、跑安装脚本，互不依赖。差别只在交付形态 ——

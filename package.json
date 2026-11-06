@@ -2,7 +2,7 @@
   "name": "@zcode/boot-refraction-zcode",
   "version": "1.0.0",
   "private": true,
-  "description": "Refraction boot film for ZCode, delivered as a standalone WebView2 launcher (full project source; both hosts share one field).",
+  "description": "Refraction boot film for ZCode — three host forms sharing one field: desktop launcher, portrait mobile page, and a DSH cordis plugin.",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -18,6 +18,7 @@
   "scripts": {
     "preview": "node tools/serve.mjs",
     "build": "node tools/build-inject-preview.mjs",
+    "mobile": "node tools/build-mobile.mjs",
     "splash": "node tools/build-splash.mjs && powershell -NoProfile -ExecutionPolicy Bypass -File splash/build.ps1",
     "splash:install": "powershell -NoProfile -ExecutionPolicy Bypass -File splash/install.ps1",
     "deploy": "node tools/install.mjs",

@@ -61,6 +61,17 @@ for (const name of ['Program.cs', 'app.manifest', 'build.ps1']) {
 }
 copyFileSync(join(root, 'splash', 'splash.html'), join(src, 'splash.html'))
 
+const icon = join(zcode, 'icon')
+mkdirSync(join(icon, 'png'), { recursive: true })
+for (const name of ['zcode-refraction.ico', 'zcode-icon.svg', 'zcode-icon-1024.png']) {
+  copyFileSync(join(root, 'icon', name), join(icon, name))
+}
+for (const name of readdirSync(join(root, 'icon', 'png'))) {
+  if (/^icon-(16|24|32|48|64|128|256)\.png$/.test(name)) {
+    copyFileSync(join(root, 'icon', 'png', name), join(icon, 'png', name))
+  }
+}
+
 zip(zcode, join(dist, `zcode-boot-refraction-zcode-${version}.zip`))
 
 // 2. DSH plugin
@@ -89,10 +100,18 @@ for (const name of readdirSync(join(root, 'lib'))) {
 
 zip(plugin, join(dist, `zcode-boot-refraction-dsh-${version}.zip`))
 
+// 3. phone build
+const phone = join(build, 'zcode-boot-refraction-mobile')
+fresh(phone)
+copyFileSync(join(root, 'mobile', 'splash-mobile.html'), join(phone, 'splash-mobile.html'))
+copyFileSync(join(root, 'mobile', 'README.md'), join(phone, 'README.md'))
+zip(phone, join(dist, `zcode-boot-refraction-mobile-${version}.zip`))
+
 console.log('\narchives:')
 for (const name of [
   `zcode-boot-refraction-zcode-${version}.zip`,
   `zcode-boot-refraction-dsh-${version}.zip`,
+  `zcode-boot-refraction-mobile-${version}.zip`,
 ]) {
   const path = join(dist, name)
   console.log(`  ${path}  ${(readFileSync(path).length / 1024).toFixed(1)}kb`)

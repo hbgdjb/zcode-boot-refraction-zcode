@@ -1,0 +1,41 @@
+/* Portrait tuning: the mark and the wordmark are sized off the width, and the
+   only chrome left is the hairline along the bottom. */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+.zcb__mark {
+  width: clamp(148px, 46vw, 240px);
+}
+
+.zcb__title {
+  font-size: clamp(46px, 14.5vw, 78px);
+  letter-spacing: -0.05em;
+}
+
+.zcb__hero {
+  padding: 0 18px 2vh;
+}
+
+.zcb__status {
+  margin-top: 14px;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+}
+
+.zcb__skip {
+  display: none;
+}
+
+.zcb__cut {
+  height: 1px;
+}

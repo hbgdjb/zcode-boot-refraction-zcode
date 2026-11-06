@@ -163,7 +163,9 @@ namespace ZCodeSplash
 
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;
-            Bounds = Screen.PrimaryScreen.Bounds;
+            // Work area, not the full screen: the app is maximized there, so the
+            // captured frame lines up with the window edge to edge.
+            Bounds = Screen.PrimaryScreen.WorkingArea;
             BackColor = Ink;
             TopMost = true;
             ShowInTaskbar = false;

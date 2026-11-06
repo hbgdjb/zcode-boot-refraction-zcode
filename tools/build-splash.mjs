@@ -61,9 +61,7 @@ const html = `<!doctype html>
 <title>ZCode</title>
 <style>${css}</style>
 <style>
-  /* Paper, not black: the last act fades the film to this colour, so the cut
-     to the app lands on the same near-white the shell uses. */
-  html, body { margin: 0; height: 100%; background: #fbfaf7; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #ffffff; overflow: hidden; }
   body { cursor: none; }
   .zcb__skip { display: none !important; }
 </style>
